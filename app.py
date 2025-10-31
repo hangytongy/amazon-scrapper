@@ -26,7 +26,12 @@ if st.button("Start Scraping 🚀"):
         async def run_scraper():
             return await scrape_search_results(keyword, max_pages, lambda p: progress_bar.progress(p))
 
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
         products = loop.run_until_complete(run_scraper())
 
         if not products:
