@@ -1,11 +1,11 @@
 import streamlit as st
 import asyncio
-import aiohttp
 import nest_asyncio
-from bs4 import BeautifulSoup
 import pandas as pd
 from io import BytesIO
 from amazon_scraper_async import scrape_search_results
+
+nest_asyncio.apply()
 
 # ---------- Streamlit App ----------
 st.set_page_config(page_title="Amazon Scraper Async", page_icon="🛒", layout="centered")
@@ -19,27 +19,21 @@ if st.button("Start Scraping 🚀"):
     if not keyword.strip():
         st.error("Please enter a keyword first.")
     else:
-        st.write("Scraping started... please wait ⏳")
-
+        st.info("Scraping started... please wait ⏳")
         progress_bar = st.progress(0.0)
 
         async def run_scraper():
             return await scrape_search_results(keyword, max_pages, lambda p: progress_bar.progress(p))
 
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
+        loop = asyncio.get_event_loop()
         products = loop.run_until_complete(run_scraper())
 
         if not products:
             st.warning("No products found.")
         else:
             df = pd.DataFrame(products)
-            df['num_ratings'] = df['num_ratings'].apply(lambda x: 0 if x == None else int(x.replace(",","")))
-            df = df.sort_values(by = ['num_ratings', 'rating'], ascending = [False, False])
+            df['num_ratings'] = df['num_ratings'].apply(lambda x: 0 if x is None else int(x.replace(",", "")))
+            df = df.sort_values(by=['num_ratings', 'rating'], ascending=[False, False])
             st.success(f"✅ Scraped {len(df)} products successfully!")
 
             st.dataframe(df.head())
@@ -54,3 +48,4 @@ if st.button("Start Scraping 🚀"):
                 file_name=f"{keyword.replace(' ', '_')}_amazon_products.csv",
                 mime="text/csv"
             )
+
